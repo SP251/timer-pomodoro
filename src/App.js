@@ -1,26 +1,110 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from 'react';
+import TodoList from './components/TodoComponents/TodoList';
+import TodoForm from './components/TodoComponents/TodoForm';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      todos: [{
+        //task: '',
+        //id: '',
+        //completed: false
+      }],
+      todo: ''
+    }
+  }
+
+  componentDidMount() {
+    this.addLocalStorage();
+    window.addEventListener(
+      "beforeunload",
+      this.saveLocalStorage.bind(this)
+    )
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener(
+      "beforeunload",
+      this.saveLocalStorage.bind(this)
+    )
+  }
+
+  addLocalStorage() {
+    for (let key in this.state) {
+      if (localStorage.hasOwnProperty(key)) {
+        let value = localStorage.getItem(key);
+        try {
+          value = JSON.parse(value);
+          this.setState({ [key]: value })
+        }
+        catch (event) {
+          this.setState({ [key]: value })
+        }
+      }
+    }
+  }
+
+  saveLocalStorage() {
+    for (let key in this.state) {
+      localStorage.setItem(key, JSON.stringify(this.state[key]))
+    }
+  }
+
+  inputChangeHandler = event => {
+    this.setState({ [event.target.name]: event.target.value })
+  }
+
+  addTask = event => {
+    event.preventDefault();
+    let newTask = {
+      task: this.state.todo,
+      id: Date.now(),
+      completed: false
+    };
+    this.setState({
+      todos: [...this.state.todos, newTask],
+      todo: ''
+    })
+  }
+
+  toggleComplete = itemId => {
+    const todos = this.state.todos.map(todo => {
+      if (todo.id === itemId) {
+        todo.completed = !todo.completed
+      }
+      return todo
+    });
+    this.setState({ todos, todo: '' })
+  }
+
+  removeItems = event => {
+    event.preventDefault();
+    this.setState(prevState => {
+      return {
+        todos: prevState.todos.filter(todo => {
+          return !todo.completed;
+        })
+      }
+    })
+  }
+
+  render() {
+    return (
+      <div className="App">
+        <h1>To-Do List</h1>
+        <TodoList
+          todos={this.state.todos}
+          toggleComplete={this.toggleComplete} />
+        <TodoForm
+          todos={this.state.todos}
+          value={this.state.todo}
+          inputChangeHandler={this.inputChangeHandler}
+          addTask={this.addTask}
+          removeItems={this.removeItems} />
+      </div>
+    );
+  }
 }
-
 export default App;
